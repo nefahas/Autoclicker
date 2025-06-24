@@ -159,7 +159,7 @@
             MinimumSize = new Size(275, 175);
             Name = "UI";
             StartPosition = FormStartPosition.WindowsDefaultBounds;
-            Text = "NUT CLICKER 2";
+            Text = "Autoclicker";
             TopMost = true;
             KeyDown += UI_KeyDown;
             ResumeLayout(false);
