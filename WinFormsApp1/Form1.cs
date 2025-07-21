@@ -11,6 +11,7 @@ using System.Drawing.Design;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Reactive;
 
 namespace Autoclicker
 {
@@ -33,16 +34,70 @@ namespace Autoclicker
 
         [DllImport("Kernel32.dll", CallingConvention = CallingConvention.Winapi)]
         static extern void GetSystemTimePreciseAsFileTime(out long filetime);
-        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        static extern void mouse_event(long dwFlags, long dx, long dy, long cButtons, long dwExtraInfo);
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct INPUT
+        {
+            public int type;
+            public InputUnion u;
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        struct InputUnion
+        {
+            [FieldOffset(0)] public MOUSEINPUT mi;
+        }
+
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [DllImport("user32.dll")]
+        static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
 
         private void DoClick()
         {
-            int x = Cursor.Position.X;
-            int y = Cursor.Position.Y;
+            var inputDown = new INPUT
+            {
+                type = 0,
+                u = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        dwFlags = 0x0002
+                    }
+                }
+            };
 
-            mouse_event(0x02 | 0x04, x, y, 0, 0);
+            var inputUp = new INPUT
+            {
+                type = 0,
+                u = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        dwFlags = 0x0004
+                    }
+                }
+            };
+
+            INPUT[] inputs = new INPUT[] { inputDown, inputUp };
+            SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
         }
+
         public DateTimeOffset GetNow()
         {
             long fileTime;
