@@ -37,6 +37,7 @@
             label4 = new Label();
             label5 = new Label();
             label6 = new Label();
+            gripToggle = new CheckBox();
             SuspendLayout();
             // 
             // label1
@@ -135,6 +136,20 @@
             label6.TextAlign = ContentAlignment.MiddleCenter;
             label6.Click += label6_Click;
             // 
+            // gripToggle
+            // 
+            gripToggle.AutoSize = true;
+            gripToggle.CheckAlign = ContentAlignment.MiddleRight;
+            gripToggle.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            gripToggle.ForeColor = Color.White;
+            gripToggle.Location = new Point(101, 130);
+            gripToggle.Name = "gripToggle";
+            gripToggle.Size = new Size(63, 19);
+            gripToggle.TabIndex = 11;
+            gripToggle.Text = "Press B";
+            gripToggle.UseVisualStyleBackColor = true;
+            gripToggle.CheckedChanged += gripToggle_CheckedChanged;
+            // 
             // UI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -142,7 +157,8 @@
             AutoSize = true;
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
             BackColor = Color.FromArgb(50, 50, 50);
-            ClientSize = new Size(259, 136);
+            ClientSize = new Size(259, 161);
+            Controls.Add(gripToggle);
             Controls.Add(label6);
             Controls.Add(input2);
             Controls.Add(label4);
@@ -155,8 +171,8 @@
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Icon = (Icon)resources.GetObject("$this.Icon");
             MaximizeBox = false;
-            MaximumSize = new Size(275, 175);
-            MinimumSize = new Size(275, 175);
+            MaximumSize = new Size(275, 200);
+            MinimumSize = new Size(275, 200);
             Name = "UI";
             StartPosition = FormStartPosition.WindowsDefaultBounds;
             Text = "Autoclicker";
@@ -175,5 +191,6 @@
         private Label label4;
         private Label label5;
         private Label label6;
+        private CheckBox gripToggle;
     }
 }

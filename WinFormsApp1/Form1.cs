@@ -4,6 +4,7 @@ using SharpHook.Native;
 using SharpHook.Reactive;
 using SharpHook;
 using System.Reactive.Linq;
+using System;
 using System.Timers;
 using System.ComponentModel;
 using System.Threading;
@@ -26,6 +27,7 @@ namespace Autoclicker
         private int clickSpeed = 70;
         private bool holding = false;
         private bool clicking = false;
+        private bool gripping = false;
         private Color bg;
         SimpleReactiveGlobalHook kbHook = new SimpleReactiveGlobalHook(GlobalHookType.All);
         Thread kbThread;
@@ -35,22 +37,38 @@ namespace Autoclicker
         [DllImport("Kernel32.dll", CallingConvention = CallingConvention.Winapi)]
         static extern void GetSystemTimePreciseAsFileTime(out long filetime);
 
+        const string AUMID = "com.neffas.autoclicker";
+
         [StructLayout(LayoutKind.Sequential)]
         struct INPUT
         {
-            public int type;
+            public int type; // 0 mouse 1 kb 2 hardware
             public InputUnion u;
         }
 
         [StructLayout(LayoutKind.Explicit)]
-        struct InputUnion
+        public struct InputUnion
         {
-            [FieldOffset(0)] public MOUSEINPUT mi;
+            [FieldOffset(0)]
+            public MOUSEINPUT mi;
+
+            [FieldOffset(0)]
+            public KEYBDINPUT ki;
+
+            [FieldOffset(0)]
+            public HARDWAREINPUT hi;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct HARDWAREINPUT
+        {
+            public uint uMsg;
+            public ushort wParamL;
+            public ushort wParamH;
+        }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct MOUSEINPUT
+        public struct MOUSEINPUT
         {
             public int dx;
             public int dy;
@@ -60,9 +78,39 @@ namespace Autoclicker
             public IntPtr dwExtraInfo;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KEYBDINPUT
+        {
+            public ushort wVk;      // keycode
+            public ushort wScan;    // hardware scan code
+            public uint dwFlags;    // KEYEVENTF_ *
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+
         [DllImport("user32.dll")]
         static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
+        // 0x0000 kDown 0x0002 kUp
+        private void SendKey(ushort keyCode, bool down)
+        {
+            var input = new INPUT
+            {
+                type = 1,
+                u = new InputUnion
+                {
+                    ki = new KEYBDINPUT()
+                }
+            };
+
+            uint downI = (down) ? 0x0000u : 0x0002u;
+
+            input.u.ki.wVk = keyCode;
+            input.u.ki.dwFlags = downI;
+            INPUT[] inputs = new INPUT[] { input };
+            SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+        }
 
         private void DoClick()
         {
@@ -96,6 +144,8 @@ namespace Autoclicker
 
             INPUT[] inputs = new INPUT[] { inputDown, inputUp };
             SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+
+
         }
 
         public DateTimeOffset GetNow()
@@ -111,7 +161,8 @@ namespace Autoclicker
             string directory = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\neffas";
             string path = directory + @"\autoTxt.txt";
 
-            if (Directory.Exists(directory) && File.Exists(path)) {
+            if (Directory.Exists(directory) && File.Exists(path))
+            {
                 string json = File.ReadAllText(path);
 
                 AppSettings loadedSettings = JsonSerializer.Deserialize<AppSettings>(json);
@@ -120,16 +171,19 @@ namespace Autoclicker
                 clickSpeed = loadedSettings.clickSpeed;
                 toggleKey = loadedSettings.toggleKey;
                 toggleKeyMouse = loadedSettings.toggleKeyMouse;
+                gripping = loadedSettings.gripToggle;
             }
 
             if (toggleKey != KeyCode.VcNoName)
             {
                 label6.Text = TrimKeyCode(toggleKey.ToString());
-            } else
+            }
+            else
             {
                 label6.Text = FormatMouseCode(toggleKeyMouse.ToString());
             }
 
+            gripToggle.Checked = gripping;
             this.FormClosing += new FormClosingEventHandler(OnClose);
             bg = this.BackColor;
 
@@ -182,6 +236,13 @@ namespace Autoclicker
                             if (sw.ElapsedTicks >= next)
                             {
                                 DoClick();
+
+                                if (gripping)
+                                {
+                                    SendKey(0x42, true);
+                                    SendKey(0x42, false);
+                                }
+
                                 next = sw.ElapsedTicks + intTicks;
                             }
                         }
@@ -196,7 +257,7 @@ namespace Autoclicker
 
         private void OnClose(object sender, FormClosingEventArgs e)
         {
-            
+
             toggled = false;
             holding = false;
             kbHook?.Dispose();
@@ -216,6 +277,7 @@ namespace Autoclicker
                 clickSpeed = clickSpeed,
                 toggleKey = toggleKey,
                 toggleKeyMouse = toggleKeyMouse,
+                gripToggle = gripping
             };
 
             string json = JsonSerializer.Serialize(save);
@@ -423,6 +485,11 @@ namespace Autoclicker
             label6.ForeColor = Color.Black;
             CaptureInputToggle(false);
         }
+
+        private void gripToggle_CheckedChanged(object sender, EventArgs e)
+        {
+            gripping = !gripping;
+        }
     }
     public class AppSettings
     {
@@ -430,5 +497,6 @@ namespace Autoclicker
         public int clickSpeed { get; set; }
         public KeyCode toggleKey { get; set; }
         public MouseButton toggleKeyMouse { get; set; }
+        public bool gripToggle { get; set; }
     }
 }

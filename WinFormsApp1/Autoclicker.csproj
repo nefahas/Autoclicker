@@ -2,13 +2,15 @@
     
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-	<PublishSingleFile>true</PublishSingleFile>
-	<SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>icon1.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,5 +21,4 @@
     <PackageReference Include="SharpHook" Version="5.3.9" />
     <PackageReference Include="SharpHook.Reactive" Version="5.3.9" />
   </ItemGroup>
-
 </Project>
